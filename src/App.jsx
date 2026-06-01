@@ -10,7 +10,8 @@ import {
   Radio, 
   Volume2, 
   Camera,
-  ExternalLink
+  ExternalLink,
+  Fingerprint, Radar
 } from 'lucide-react';
 
 const App = () => {
@@ -105,7 +106,7 @@ const App = () => {
 
         <div className="pt-8 mt-8 border-t border-zinc-800">
           <p className="text-sm font-medium text-zinc-400 mb-2">Réalisé par :</p>
-          <p className="text-white font-semibold mb-4">[Baptiste Rembert]</p>
+          <p className="text-white font-semibold mb-4">Baptiste Rembert</p>
         </div>
       </aside>
 
@@ -182,7 +183,7 @@ const App = () => {
             </h4>
             <div className="text-zinc-400 leading-relaxed text-sm mb-6">
               <p className="mb-4">
-                Lorsque l'on tente d'appliquer cette même EDP sur un objet massif (comme un randonneur), le modèle échoue. La diffusion lisse géométriquement la zone mais ne peut pas inventer de texture. Nous passons alors à une approche probabiliste par <b>rapiéçage (patch-based)</b> :
+                Lorsque l'on tente d'appliquer cette même EDP sur un objet massif, le modèle échoue. La diffusion lisse géométriquement la zone mais ne peut pas inventer de texture. Nous passons alors à une approche probabiliste par <b>rapiéçage (patch-based)</b> :
               </p>
               <div className="bg-zinc-950 p-4 rounded-xl border border-zinc-800 font-mono text-sm text-zinc-300 my-4 overflow-x-auto text-center whitespace-nowrap">
                 q̂ = argmin<sub>q ∈ F'(p)</sub> [ 1 / Card(R(p)) ] ∑<sub>(i,j) ∈ R(p)</sub> ||u(i<sub>p</sub>+i, j<sub>p</sub>+j) - u(i<sub>q</sub>+i, j<sub>q</sub>+j)||<sup>2</sup>
@@ -275,7 +276,7 @@ const App = () => {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               {/* Colonne Gauche */}
               <div>
-                <h5 className="text-lg font-medium text-blue-400 mb-3">L'Évolution du Modèle (De l'Ex 0 au Classique)</h5>
+                <h5 className="text-lg font-medium text-blue-400 mb-3">L'Évolution du Modèle</h5>
                 <div className="text-zinc-400 leading-relaxed text-sm">
                   Un contour actif (Snake) est une courbe P(s) minimisant une énergie. 
                   Dans l'<b>Exercice 0 (Approche Naïve)</b>, la force externe dérive directement du gradient de l'image (E<sub>ext</sub> = -||∇I||<sup>2</sup>). L'algorithme exige une initialisation extrêmement proche du bord, sinon le contour ne bouge pas.
@@ -474,7 +475,7 @@ const App = () => {
                 <p className="text-zinc-300 text-sm leading-relaxed">
                   {poissonTab === 'naif' && "Le collage des pixels bruts génère un contraste absolu. L'objet semble 'posé' sur la scène car son équilibre des blancs et ses ombres ne correspondent pas au décor ambiant."}
                   {poissonTab === 'poisson' && "Succès colorimétrique : la luminosité du décor s'est diffusée dans l'objet. Cependant, si le fond cible était très texturé, cette texture a été remplacée par l'aspect lisse de l'objet source (effet autocollant opaque)."}
-                  {poissonTab === 'mixte' && "Succès absolu. En retenant les gradients maximaux locaux, les fortes textures de la cible (ex: des briques, de la roche) ont été conservées et transparaissent à travers l'objet. L'incrustation est organique."}
+                  {poissonTab === 'mixte' && "Succès absolu. En retenant les gradients maximaux locaux, les fortes textures de la cible ont été conservées et transparaissent à travers l'objet. L'incrustation est organique."}
                   {poissonTab !== 'naif' && poissonTab !== 'poisson' && poissonTab !== 'mixte' && "Sélectionnez une méthode pour voir l'analyse."}
                 </p>
               </div>
@@ -834,63 +835,105 @@ const App = () => {
             <span className="bg-zinc-800 text-zinc-300 w-8 h-8 rounded flex items-center justify-center text-sm font-mono">11</span>
             TP11 : Crash-Test de Robustesse (Méthode Shazam)
           </h3>
+
+          <p className="text-zinc-400 leading-relaxed mb-8">
+            Nous avons vu au TP10 comment les producteurs déstructurent le son. La question finale de ce pipeline est : un algorithme de reconnaissance musicale peut-il retrouver la source d'un sample une fois qu'il a été étiré, pitché et filtré ?
+          </p>
           
-          {/* Bloc 1: Théorie */}
-          <div className="bg-zinc-900 rounded-lg p-6 mb-8">
-            <h4 className="text-xl font-semibold text-white mb-6">L'Algorithme Anti-Plagiat</h4>
+          {/* Bloc 1: Théorie de l'Empreinte */}
+          <div className="bg-zinc-900 rounded-lg p-6 mb-8 border border-zinc-800">
+            <h4 className="text-xl font-semibold text-white mb-6 flex items-center gap-2">
+              <Fingerprint size={24} className="text-blue-400" />
+              L'Algorithme Anti-Plagiat
+            </h4>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               {/* Colonne Gauche */}
-              <div>
-                <h5 className="text-lg font-medium text-blue-400 mb-3">Empreinte par Constellation</h5>
+              <div className="bg-zinc-950/50 p-5 rounded-xl border border-zinc-800/50">
+                <h5 className="text-lg font-medium text-blue-400 mb-3">1. Empreinte par Constellation</h5>
                 <div className="text-zinc-400 leading-relaxed text-sm">
-                  Pour identifier la source de notre sample, l'algorithme extrait les pics d'énergie locaux du spectrogramme (fréquences dominantes). Ces points forment une "constellation". Pour accroître la robustesse, ils sont groupés par paires créant un identifiant sur 32 bits :
-                  <div className="bg-zinc-950 p-4 rounded-xl border border-zinc-800 font-mono text-sm text-zinc-300 my-4 overflow-x-auto text-center whitespace-nowrap">
-                    Hash = [ f<sub>i</sub> (8 bits) | f<sub>j</sub> (8 bits) | Δt<sub>ij</sub> (16 bits) ]
+                  <p className="mb-3">
+                    Pour identifier un son, l'algorithme extrait les pics d'énergie locaux du spectrogramme (les fréquences dominantes qui survivent au bruit). Ces points forment une "constellation".
+                  </p>
+                  <p>
+                    Pour accroître la robustesse et créer un identifiant unique, les points sont groupés par paires (un point "ancre" et un point cible), formant un hash sur 32 bits :
+                  </p>
+                  <div className="bg-zinc-950 p-4 rounded-lg border border-zinc-800 font-mono text-sm text-blue-300 my-4 overflow-x-auto text-center whitespace-nowrap">
+                    Hash = [ f<sub>ancre</sub> | f<sub>cible</sub> | Δt ]
                   </div>
                 </div>
               </div>
 
               {/* Colonne Droite */}
-              <div>
-                <h5 className="text-lg font-medium text-cyan-400 mb-3">Cohérence Temporelle (Recherche Avancée)</h5>
+              <div className="bg-zinc-950/50 p-5 rounded-xl border border-zinc-800/50">
+                <h5 className="text-lg font-medium text-cyan-400 mb-3">2. Cohérence Temporelle</h5>
                 <div className="text-zinc-400 leading-relaxed text-sm">
-                  Face à un sample fortement altéré par notre Vocoder, une simple comparaison de hash produit trop de faux positifs. La recherche avancée ajoute une contrainte physique stricte, vérifiant que le décalage temporel global reste constant :
-                  <div className="bg-zinc-950 p-4 rounded-xl border border-zinc-800 font-mono text-sm text-zinc-300 my-4 overflow-x-auto text-center whitespace-nowrap">
-                    Δt = t<sub>morceau</sub> - t<sub>extrait</sub> = Constante
+                  <p className="mb-3">
+                    Face à un sample fortement altéré, une simple comparaison de hash produit des centaines de faux positifs.
+                  </p>
+                  <p>
+                    On peut vérifier que le décalage temporel global entre les hashs de la base de données et ceux de l'extrait reste constant au fil de la lecture :
+                  </p>
+                  <div className="bg-zinc-950 p-4 rounded-lg border border-zinc-800 font-mono text-sm text-cyan-300 my-4 overflow-x-auto text-center whitespace-nowrap">
+                    Δt = t<sub>base</sub> - t<sub>extrait</sub> = Constante
                   </div>
-                  Seul un vrai match mathématique peut valider cette diagonale temporelle.
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Bloc 2: Analyse Visuelle */}
-          <h4 className="text-xl font-semibold text-white mb-6">Analyse de la Détection</h4>
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden mb-8 grid grid-cols-1 lg:grid-cols-3">
+          {/* Bloc 2: Analyse Visuelle et Bilan */}
+          <h4 className="text-xl font-semibold text-white mb-6 flex items-center gap-2">
+            <Radar size={24} className="text-white" />
+            Analyse de la Détection (Appariement des Pics)
+          </h4>
+
+          {/* Graphique Constellation (Pleine largeur) */}
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden mb-8 p-6">
+            <h5 className="text-zinc-200 font-medium mb-4 flex items-center gap-2">
+              <Activity size={18} className="text-zinc-500" /> 
+              Visualisation : Constellation & Alignement Temporel
+            </h5>
+            <div className="w-full bg-zinc-950 border border-zinc-800 rounded-xl overflow-hidden flex items-center justify-center p-2 min-h-[400px]">
+              <img 
+                src="images/tp11/Pics_spectraux.png" 
+                alt="Appariement des pics spectraux" 
+                className="w-full h-full object-contain rounded-lg"
+              />
+            </div>
+          </div>
+
+          {/* Bilan & Tableau de Précision (En dessous) */}
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 mb-12">
+            <h5 className="text-white font-medium mb-6">Bilan des performances</h5>
             
-            {/* Zone Graphique (Prend 2 colonnes) */}
-            <div className="p-6 border-b lg:border-b-0 lg:border-r border-zinc-800 lg:col-span-2">
-              <div className="w-full bg-zinc-950 border border-zinc-800 rounded-xl h-80 flex flex-col items-center justify-center">
-                <Activity size={32} className="text-zinc-600 mb-4" />
-                <p className="text-zinc-400 font-semibold mb-2">Performances de Détection</p>
-                <p className="text-sm text-zinc-600">(Espace pour importer la courbe Recharts du SNR)</p>
-              </div>
+            <div className="overflow-x-auto mb-8">
+              <table className="w-full text-sm text-left text-zinc-400">
+                <thead className="text-xs text-zinc-200 uppercase bg-zinc-800">
+                  <tr>
+                    <th className="px-6 py-3">Type de Test</th>
+                    <th className="px-6 py-3">Précision</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-zinc-950 divide-y divide-zinc-800">
+                  <tr>
+                    <td className="px-6 py-4">Sans bruit</td>
+                    <td className="px-6 py-4 font-mono text-emerald-400 font-bold">87.0 %</td>
+                  </tr>
+                  <tr>
+                    <td className="px-6 py-4">Discussion en fond</td>
+                    <td className="px-6 py-4 font-mono text-emerald-400 font-bold">84.0 %</td>
+                  </tr>
+                  <tr>
+                    <td className="px-6 py-4">Bruit blanc (SNR=1)</td>
+                    <td className="px-6 py-4 font-mono text-amber-400 font-bold">66.0 %</td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
 
-            {/* Texte d'analyse (Prend 1 colonne) */}
-            <div className="p-6 flex flex-col justify-center bg-zinc-950/30">
-              <h5 className="text-white font-medium mb-4">Bilan du Crash-Test</h5>
-              <ul className="space-y-4 text-sm text-zinc-400">
-                <li className="flex gap-3">
-                  <div className="w-1.5 h-1.5 rounded-full bg-red-500 mt-1.5 shrink-0"></div>
-                  <p><b>Recherche Simplifiée :</b> Taux d'échec élevé. Les modifications temporelles du TP10 dispersent l'empreinte spectrale, rendant le simple comptage de collisions inefficace.</p>
-                </li>
-                <li className="flex gap-3">
-                  <div className="w-1.5 h-1.5 rounded-full bg-green-500 mt-1.5 shrink-0"></div>
-                  <p><b>Recherche Avancée :</b> Détection réussie. L'application du filtre de cohérence temporelle permet de retrouver le morceau source malgré le time-stretching, prouvant l'excellente robustesse de l'algorithme face au sampling créatif.</p>
-                </li>
-              </ul>
-            </div>
+            <p className="text-sm text-zinc-400 leading-relaxed">
+              Les résultats démontrent la robustesse de l'appariement spectral. Malgré une dégradation attendue en présence de bruit blanc, le filtre de cohérence temporelle permet de maintenir une reconnaissance fiable, validant l'efficacité de l'empreinte par pics spectraux pour les environnements réels.
+            </p>
           </div>
         </section>
         
